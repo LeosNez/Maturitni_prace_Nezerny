@@ -1,9 +1,8 @@
-//import firebase
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; //Vývoj uživatelského rozhraní
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:animate_do/animate_do.dart';
-import 'dart:math';
+import 'dart:math'; //random
 
 // FirebaseOptions pro konfiguraci Firebase pro webové aplikace
 final FirebaseOptions firebaseOptions = FirebaseOptions(
@@ -21,71 +20,9 @@ void main() async {
   await Firebase.initializeApp(options: firebaseOptions); // Inicializace Firebase pomocí dané konfigurace
   runApp(MaterialApp(
     title: "Card Hunt", // Titulek aplikace
-    theme: ThemeData(primarySwatch: Colors.blue), // Nastavení barevného tématu
-    home: FirstPage(), // Výchozí stránka aplikace
+    theme: ThemeData(primarySwatch: Colors.red), // Nastavení barevného tématu
+    home: MainMenu(), // Výchozí stránka aplikace
   ));
-}
-
-class MainMenu extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Card Hunt",
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue[50]!, Colors.blue[100]!],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  "Vítejte v Card Hunt!",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.blueAccent,
-                  ),
-                ),
-                SizedBox(height: 40),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: Colors.blueAccent,
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AllCardsPage()),
-                    );
-                  },
-                  child: Text(
-                    "Zobrazit všechny kartičky",
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // Hlavní úvodní stránka aplikace
@@ -171,14 +108,14 @@ class FirstPage extends StatelessWidget {
 }
 
 class LogInScreen extends StatelessWidget {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   Future<void> logIn(BuildContext context) async {
     try {
       final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+        email: emailController.text,
+        password: passwordController.text,
       );
       print("User signed in: ${userCredential.user?.email}");
       Navigator.pushReplacement(
@@ -186,11 +123,11 @@ class LogInScreen extends StatelessWidget {
         MaterialPageRoute(builder: (context) => MainMenu()),
       );
     } catch (e) {
-      _showErrorDialog(context, e.toString());
+      showErrorDialog(context, e.toString());
     }
   }
 
-  void _showErrorDialog(BuildContext context, String message) {
+  void showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
       builder: (context) {
@@ -289,7 +226,7 @@ class LogInScreen extends StatelessWidget {
                                   ),
                                 ),
                                 child: TextField(
-                                  controller: _emailController,
+                                  controller: emailController,
                                   decoration: InputDecoration(
                                     hintText: "Email",
                                     hintStyle: TextStyle(color: Colors.grey),
@@ -297,18 +234,8 @@ class LogInScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              Container(
-                                padding: EdgeInsets.all(10),
-                                child: TextField(
-                                  controller: _passwordController,
-                                  obscureText: true,
-                                  decoration: InputDecoration(
-                                    hintText: "Heslo",
-                                    hintStyle: TextStyle(color: Colors.grey),
-                                    border: InputBorder.none,
-                                  ),
-                                ),
-                              ),
+                              // Upravený widget pro heslo
+                              PasswordField(controller: passwordController),
                             ],
                           ),
                         ),
@@ -359,21 +286,62 @@ class LogInScreen extends StatelessWidget {
   }
 }
 
+// Vytvořený widget PasswordField
+class PasswordField extends StatefulWidget {
+  final TextEditingController controller;
+
+  const PasswordField({Key? key, required this.controller}) : super(key: key);
+
+  @override
+  _PasswordFieldState createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<PasswordField> {
+  bool _isObscured = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      child: TextField(
+        controller: widget.controller,
+        obscureText: _isObscured,
+        decoration: InputDecoration(
+          hintText: "Heslo",
+          hintStyle: TextStyle(color: Colors.grey),
+          border: InputBorder.none,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _isObscured ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
+            ),
+            onPressed: () {
+              setState(() {
+                _isObscured = !_isObscured;
+              });
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class SignUpScreen extends StatelessWidget {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   Future<void> registerUser(BuildContext context) async {
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showErrorDialog(context, "Hesla se neshodují.");
+    if (passwordController.text != confirmPasswordController.text) {
+      showErrorDialog(context, "Hesla se neshodují.");
       return;
     }
 
     try {
       final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+        email: emailController.text,
+        password: passwordController.text,
       );
       print("User registered: ${userCredential.user?.email}");
       Navigator.pushReplacement(
@@ -381,11 +349,11 @@ class SignUpScreen extends StatelessWidget {
         MaterialPageRoute(builder: (context) => MainMenu()),
       );
     } catch (e) {
-      _showErrorDialog(context, e.toString());
+      showErrorDialog(context, e.toString());
     }
   }
 
-  void _showErrorDialog(BuildContext context, String message) {
+  void showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
       builder: (context) {
@@ -484,7 +452,7 @@ class SignUpScreen extends StatelessWidget {
                                   ),
                                 ),
                                 child: TextField(
-                                  controller: _emailController,
+                                  controller: emailController,
                                   decoration: InputDecoration(
                                     hintText: "Email",
                                     hintStyle: TextStyle(color: Colors.grey),
@@ -500,7 +468,7 @@ class SignUpScreen extends StatelessWidget {
                                   ),
                                 ),
                                 child: TextField(
-                                  controller: _passwordController,
+                                  controller: passwordController,
                                   obscureText: true,
                                   decoration: InputDecoration(
                                     hintText: "Heslo",
@@ -512,7 +480,7 @@ class SignUpScreen extends StatelessWidget {
                               Container(
                                 padding: EdgeInsets.all(10),
                                 child: TextField(
-                                  controller: _confirmPasswordController,
+                                  controller: confirmPasswordController,
                                   obscureText: true,
                                   decoration: InputDecoration(
                                     hintText: "Potvrdit heslo",
@@ -555,123 +523,212 @@ class SignUpScreen extends StatelessWidget {
   }
 }
 
-class AllCardsPage extends StatefulWidget {
+class MainMenu extends StatelessWidget {
   @override
-  _AllCardsPageState createState() => _AllCardsPageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Card Hunt",
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue[50]!, Colors.blue[100]!],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  "Vítejte v Card Hunt!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: Colors.blueAccent,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 10.0,
+                          color: Colors.blue,
+                          offset: Offset(5, 5),
+                        )
+                      ]
+                  ),
+                ),
+                SizedBox(height: 40),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AllCardsPage()),
+                    );
+                  },
+                  child: Text(
+                    "Zobrazit všechny kartičky",
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 40),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AllCardsPage()),
+                    );
+                  },
+                  child: Text(
+                    "Nový balíček",
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                /*ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ShopPage()),
+                    );
+                  },
+                  child: Text("Obchod"),
+                ),*/
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _AllCardsPageState extends State<AllCardsPage> {
+class AllCardsPage extends StatefulWidget {
+  @override
+  AllCardsPageState createState() => AllCardsPageState();
+}
+
+class AllCardsPageState extends State<AllCardsPage> {
+  final List<String> backgrounds = ["pozadi.png", "Pozadi2.png", "Pozadi3.png"];
+  final List<String> heroes = ["Hrdina1.png", "Hrdina2.png", "Hrdina3.png"];
   final List<Map<String, dynamic>> allCards = [
-    {"name": "blue", "image": "kocicka.jpg", "attack": 6, "defense": 7, "health": 5000, "skills": 3},
-    {"name": "matyz", "image": "Obrazek1.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "grisik", "image": "kocicka.jpg", "attack": -50, "defense": 15, "health": 100, "skills": 3},
-    {"name": "kanye", "image": "Obrazek1.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "diddz", "image": "Astra.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "karel", "image": "Obrazek1.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "Henry", "image": "Astra.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "Kael", "image": "Obrazek1.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "martin", "image": "Astra.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "zahradnuk", "image": "Obrazek1.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "mys", "image": "Astra.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
-    {"name": "152", "image": "Obrazek1.png", "attack": 20, "defense": 15, "health": 100, "skills": 3},
+    {"name": "drax", "attack": 57, "defense": 46, "value": 100},
+    {"name": "diddz", "attack": 32, "defense": 15, "value": 100},
+    {"name": "karel", "attack": 20, "defense": 15, "value": 100},
   ];
 
-  List<Map<String, dynamic>> filteredCards = [];
-  String searchQuery = "";
-  String? _sortOrder; // může být null
-  double _minValue = 10;
-  double _maxValue = 50;
+  List<Map<String, dynamic>> generatedCards = [];
 
   @override
   void initState() {
     super.initState();
-    filteredCards = allCards.map((card) {
-      card["value"] = Random().nextInt(41) + 10;
-      return card;
-    }).toList();
+    generateCardVariants();
   }
 
-  void updateSearchQuery(String query) {
-    setState(() {
-      searchQuery = query;
-      _applyFilters();
-    });
-  }
-
-  void _applyFilters() {
-    setState(() {
-      if (searchQuery.isEmpty) {
-        // Pokud není zadán vyhledávací dotaz, zobraz všechny kartičky
-        filteredCards = allCards.where((card) {
-          return card["value"] >= _minValue && card["value"] <= _maxValue;
-        }).toList();
-      } else {
-        // Filtrování podle vyhledávacího dotazu (bez ohledu na velikost písmen)
-        filteredCards = allCards.where((card) {
-          final name = card["name"]!.toLowerCase();
-          return name.startsWith(searchQuery.toLowerCase()) ||
-              name.contains(searchQuery.toLowerCase());
-        }).where((card) {
-          // Filtrování podle hodnoty
-          return card["value"] >= _minValue && card["value"] <= _maxValue;
-        }).toList();
+  void generateCardVariants() {
+    for (var background in backgrounds) {
+      for (var hero in heroes) {
+        for (var card in allCards) {
+          generatedCards.add({
+            "name": card["name"],
+            "attack": card["attack"],
+            "defense": card["defense"],
+            "value": card["value"],
+            "background": background,
+            "hero": hero,
+          });
+        }
       }
-
-      _sortCards(); // Aplikace řazení
-    });
-  }
-
-  void _sortCards() {
-    if (_sortOrder == null) {
-      filteredCards.shuffle(); // Zamíchání seznamu
-      return;
-    }
-
-    if (_sortOrder == 'A-Z') {
-      filteredCards.sort((a, b) => a["name"]!.toLowerCase().compareTo(b["name"]!.toLowerCase()));
-    } else {
-      filteredCards.sort((a, b) => b["name"]!.toLowerCase().compareTo(a["name"]!.toLowerCase()));
     }
   }
 
-  void _changeSortOrder(String? newSortOrder) {
-    setState(() {
-      _sortOrder = newSortOrder;
-      _sortCards();
-    });
-  }
-
-  void _updateValueRange(RangeValues values) {
-    setState(() {
-      _minValue = values.start;
-      _maxValue = values.end;
-      _applyFilters();
-    });
-  }
-
-  Widget _buildCardTile(Map<String, dynamic> card) {
-    return Card(
-      margin: EdgeInsets.all(10),
-      child: ListTile(
-        leading: Image.asset(
-          'Assets/Obrazky/${card["image"]}',
-          width: 50,
-          height: 50,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(Icons.image_not_supported, size: 50);
-          },
-        ),
-        title: Text(card["name"]!),
-        subtitle: Text("Hodnota: ${card["value"]}"),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CardDetailPage(card: card),
+  Widget buildCardTile(Map<String, dynamic> card) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CardDetailPage(card: card),
+          ),
+        );
+      },
+      child: Card(
+        margin: EdgeInsets.all(10),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Image.asset('Assets/Obrazky/${card["background"]}', width: 120, height: 160, fit: BoxFit.cover),
+            Image.asset('Assets/Obrazky/${card["hero"]}', width: 100, height: 140, fit: BoxFit.cover),
+            Image.asset('Assets/Obrazky/Ramecek.png', width: 120, height: 160, fit: BoxFit.cover),
+            Align(
+              alignment: Alignment(-0.067, 0.9),
+              child: Padding(
+                padding: EdgeInsets.only(top: 125),
+                child: Text(
+                  card["attack"].toString(),
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
-          );
-        },
+            Align(
+              alignment: Alignment(0.08, 0.9),
+              child: Padding(
+                padding: EdgeInsets.only(top: 125),
+                child: Text(
+                  card["defense"].toString(),
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 7,
+              child: Text(
+                card["name"],
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void openPack() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PackOpeningPage(generatedCards: generatedCards)),
     );
   }
 
@@ -684,79 +741,15 @@ class _AllCardsPageState extends State<AllCardsPage> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: "Vyhledávání",
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.search),
-                        ),
-                        onChanged: updateSearchQuery,
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    DropdownButton<String>(
-                      value: _sortOrder,
-                      items: [
-                        DropdownMenuItem(
-                          value: null, // Hodnota pro žádné řazení
-                          child: Text('Žádné řazení'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'A-Z',
-                          child: Text('A-Z'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Z-A',
-                          child: Text('Z-A'),
-                        ),
-                      ],
-                      onChanged: (newSortOrder) {
-                        _changeSortOrder(newSortOrder);
-                      },
-                      icon: Icon(Icons.sort),
-                      underline: SizedBox(),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(
-                  children: [
-                    Text("Hodnota:"),
-                    Expanded(
-                      child: RangeSlider(
-                        values: RangeValues(_minValue, _maxValue),
-                        min: 10,
-                        max: 50,
-                        divisions: 40,
-                        labels: RangeLabels(
-                          _minValue.round().toString(),
-                          _maxValue.round().toString(),
-                        ),
-                        onChanged: _updateValueRange,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          ElevatedButton(
+            onPressed: openPack,
+            child: Text("Otevřít balíček"),
           ),
           Expanded(
-            child: filteredCards.isEmpty
-                ? Center(
-              child: Text("Žádné výsledky nenalezeny"),
-            )
-                : ListView.builder(
-              itemCount: filteredCards.length,
+            child: ListView.builder(
+              itemCount: generatedCards.length,
               itemBuilder: (context, index) {
-                final card = filteredCards[index];
-                return _buildCardTile(card);
+                return buildCardTile(generatedCards[index]);
               },
             ),
           ),
@@ -766,7 +759,140 @@ class _AllCardsPageState extends State<AllCardsPage> {
   }
 }
 
-// Detailní stránka kartičky
+class PackOpeningPage extends StatefulWidget {
+  final List<Map<String, dynamic>> generatedCards;
+
+  PackOpeningPage({required this.generatedCards});
+
+  @override
+  _PackOpeningPageState createState() => _PackOpeningPageState();
+}
+
+class _PackOpeningPageState extends State<PackOpeningPage> {
+  bool _packOpened = false;
+  List<Map<String, dynamic>> _randomCards = [];
+
+  void openPack() {
+    setState(() {
+      _packOpened = true;
+    });
+
+    // Po krátkém zpoždění zobrazíme kartičky
+    Future.delayed(Duration(milliseconds: 500), () {
+      setState(() {
+        _randomCards = getRandomCards();
+      });
+    });
+  }
+
+  List<Map<String, dynamic>> getRandomCards() {
+    final random = Random();
+    List<Map<String, dynamic>> shuffled = List.from(widget.generatedCards)..shuffle(random);
+    return shuffled.take(3).toList(); // Vrátí 3 náhodné kartičky
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Otevření balíčku")),
+      body: Center(
+        child: _packOpened
+            ? AnimatedOpacity(
+          opacity: 1.0,
+          duration: Duration(seconds: 1),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Získal jsi tyto kartičky!",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _randomCards.map((card) {
+                  return buildCardTile(card);
+                }).toList(),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Zpět"),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllOpenedCardsPage(cards: _randomCards),
+                    ),
+                  );
+                },
+                child: Text("Zobrazit všechny kartičky"),
+              ),
+            ],
+          ),
+        )
+            : GestureDetector(
+          onTap: openPack,
+          child: Image.asset('Assets/Obrazky/Balicek.png', width: 200, height: 200),
+        ),
+      ),
+    );
+  }
+
+  Widget buildCardTile(Map<String, dynamic> card) {
+    return Card(
+      margin: EdgeInsets.all(10),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset('Assets/Obrazky/${card["background"]}', width: 120, height: 160, fit: BoxFit.cover),
+          Image.asset('Assets/Obrazky/${card["hero"]}', width: 100, height: 140, fit: BoxFit.cover),
+          Image.asset('Assets/Obrazky/Ramecek.png', width: 120, height: 160, fit: BoxFit.cover),
+          Align(
+            alignment: Alignment(-0.067, 0.9),
+            child: Padding(
+              padding: EdgeInsets.only(top: 125),
+              child: Text(
+                card["attack"].toString(),
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment(0.08, 0.9),
+            child: Padding(
+              padding: EdgeInsets.only(top: 125),
+              child: Text(
+                card["defense"].toString(),
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 7,
+            child: Text(
+              card["name"],
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class CardDetailPage extends StatelessWidget {
   final Map<String, dynamic> card;
 
@@ -776,29 +902,110 @@ class CardDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(card["name"]!),
-        centerTitle: true,
+        title: Text(card["name"]),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'Assets/Obrazky/${card["image"]}',
-              width: 300,
-              height: 300,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.image_not_supported, size: 200);
-              },
+            Text(
+              "${card["name"]}",
+              style: TextStyle(fontSize: 70, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
-            Text("Hodnota: ${card["value"]}"),
-            Text("Útok: ${card["attack"]}"),
-            Text("Obrana: ${card["defense"]}"),
-            Text("Životy: ${card["health"]}"),
-            Text("Dovednosti: ${card["skills"]}"),
+            SizedBox(height: 10),
+            Image.asset('Assets/Obrazky/${card["hero"]}', width: 180, height: 230, fit: BoxFit.cover),
+            SizedBox(height: 10),
+            Image.asset('Assets/Obrazky/Balicek.png', width: 180, height: 230, fit: BoxFit.cover),
+            SizedBox(height: 10),
+            Text(
+              "Útok: ${card["attack"]}",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "Obrana: ${card["defense"]}",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "Hodnota: ${card["value"]}",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class AllOpenedCardsPage extends StatelessWidget {
+  final List<Map<String, dynamic>> cards;
+
+  AllOpenedCardsPage({required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Všechny získané kartičky")),
+      body: GridView.builder(
+        padding: EdgeInsets.all(10),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 3 / 4,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemCount: cards.length,
+        itemBuilder: (context, index) {
+          return buildCardTile(cards[index]);
+        },
+      ),
+    );
+  }
+
+  Widget buildCardTile(Map<String, dynamic> card) {
+    return Card(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset('Assets/Obrazky/${card["background"]}', width: 120, height: 160, fit: BoxFit.cover),
+          Image.asset('Assets/Obrazky/${card["hero"]}', width: 100, height: 140, fit: BoxFit.cover),
+          Image.asset('Assets/Obrazky/Ramecek.png', width: 120, height: 160, fit: BoxFit.cover),
+          Align(
+            alignment: Alignment(-0.067, 0.9),
+            child: Padding(
+              padding: EdgeInsets.only(top: 125),
+              child: Text(
+                card["attack"].toString(),
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment(0.08, 0.9),
+            child: Padding(
+              padding: EdgeInsets.only(top: 125),
+              child: Text(
+                card["defense"].toString(),
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 7,
+            child: Text(
+              card["name"],
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }
